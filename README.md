@@ -1,2 +1,74 @@
 # Fullstack-Workshop-WebApp-
 Aplicación web para gestionar talleres de formación profesional
+
+# 📝 Contexto
+Permitir a estudiantes y administradores gestionar talleres como cursos técnicos, capacitaciones prácticas y programas de actualización profesional. Además, se implemento una API RESTful para interactuar con los datos de los talleres.
+
+## 📁 Archivos
+
+```bash
+├── Front end               # Front - visual usuario
+│   └───src                 # Carpeta fuente del Front
+│   │   └─                  #
+├── Back end                # Back  - Funciones ocultas a 3rceros
+│   └──config.py            # Config de variables globales
+│   └──data.env             # Enviromental Keys
+│   └──database.py          # Database functions
+├── requirements.txt        # Dependencias python
+```
+
+## 💻 Lenguajes y 🛠️ Herramientas utilizados
+React | TypeScript | Python | MySQL | Vite
+
+<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/react/react-original.svg" alt="react" width="40" height="40"/> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" alt="typescript" width="40" height="40"/> | 
+<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" alt="python" width="40" height="40"/> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original-wordmark.svg" alt="mysql" width="40" height="40"/> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/vite/vite-original.svg" alt="vite" width="40" height="40"/>
+
+
+## 📌 Deploy (Windows):
+
+
+## 📌 Deploy (Docker):
+1. Instalar docker hub [https://www.docker.com/get-started/]
+2. Abrir docker hub
+3. windows + R
+4. cmd + enter
+5. En el cmd escribir lo siguiente:
+   - 1step es una variable que especifica el nombre del contenedor
+   - 6505 es el puerto que le colocas al contenedor (es modficable)
+   - 6379 es el puerto en el que escucha keydb (no modificable)
+```bash
+docker run -p 6505:6379 --name 1step -d eqalpha/keydb 
+```
+
+## ⚙️ Instalacion de dependencias:
+```bash
+pip install flask
+```
+
+## ⚡ Ejecución Global
+Ejecuta el programa desde la carpeta front end con:
+```bash
+npm run dev
+```
+
+## ▶️ Ejecución Front End (React-TypeScript js)
+- Esto abrira el Front en el local host con el puerto '5173'
+- Ejecuta el programa desde la carpeta front end con el siguiente comando:
+```bash
+npm install
+npm run dev
+```
+
+## 🐍 Ejecución Back End (Python)
+- Esto abrira el Back end en el local host con el puerto ''
+- Ejecuta el programa desde la carpeta back end con el siguiente comando Windows CLI:
+```bash
+python app.py
+```
+- Ejecuta el programa desde la carpeta back end con el siguiente comando MAC/Linux CLI:
+```bash
+python3 app.py
+```
+
+## 🧪 Ejemplo de Uso
+<img width="1031" height="603" alt="image" src="https://github.com/user-attachments/assets/4c5bdd5b-9df2-40d5-9705-347231720a25" />
