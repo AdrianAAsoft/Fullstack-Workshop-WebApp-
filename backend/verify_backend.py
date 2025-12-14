@@ -1,7 +1,8 @@
 import requests
 import time
+from config import URLBase
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = URLBase
 
 def test_api():
     print("Testing API...")
@@ -66,10 +67,10 @@ def test_api():
     print(f"Status: {response.status_code}")
     assert response.status_code == 200
 
-    print("\nALL TESTS PASSED! ✅")
+    print("\nALL TESTS PASSED!")
 
 if __name__ == "__main__":
     try:
         test_api()
     except Exception as e:
-        print(f"\n❌ TEST FAILED: {e}")
+        print(f"\nTEST FAILED: {e}")

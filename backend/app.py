@@ -5,8 +5,7 @@ from models import db
 from resources import WorkshopListResource, WorkshopResource, WorkshopRegistration
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///workshops.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config.from_object('config.config')
 CORS(app)
 api = Api(app)
 
