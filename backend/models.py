@@ -22,7 +22,7 @@ class Workshop(db.Model):
             "category": self.category
         }
 
-# Optional Student model for Many-to-Many or simple registration log
+# Optional Students model for Many-to-Many or simple registration log
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
