@@ -18,3 +18,10 @@ export interface Enrollment {
   studentEmail: string;
   workshopId: string;
 }
+
+export interface User {
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'usuario';
+}
