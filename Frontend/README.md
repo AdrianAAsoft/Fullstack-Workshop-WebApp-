@@ -12,7 +12,7 @@ npm run build     # Genera la versión de producción
 
 ## Características
 
-- Dashboard para administradores con métricas rápidas de talleres y cupos.
+- Dashboards para administradores con métricas rápidas de talleres y cupos.
 - Formulario de creación/edición de talleres con categorías y control de cupos.
 - Cancelación y eliminación de talleres desde el catálogo.
 - Inscripción de estudiantes con validaciones de estado y capacidad.
