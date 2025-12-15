@@ -4,17 +4,40 @@ Aplicación web para gestionar talleres de formación profesional
 # 📝 Contexto
 Permitir a estudiantes y administradores gestionar talleres como cursos técnicos, capacitaciones prácticas y programas de actualización profesional. Además, se implemento una API RESTful para interactuar con los datos de los talleres.
 
+## 💻🗄️📊 Diseño de Base de datos
+Base de datos diseñada para el manejo simple de usuarios y estudiantes.  <img width="204" height="101" alt="image" src="https://github.com/user-attachments/assets/53414b41-e702-4454-8c45-40b62a71d024" /> 
+
+Database: Principal
+
+Tables: 
+- estudiantes
+   -- Columns: id (int, primary key), usrid (int, foreign key)
+- registros
+   -- Columns: id (int, primary key), workshop_id (int, foreign key), student_id(int,foreign key),registered_at (datetime)
+- talleres
+  -- Columns: id (int, primary key), usrid (int, foreign key)
+- usuarios
+  -- Columns: id (int, primary key), nombre (String(25)), , correo (String(100)), contra (String(15)), admin (Boolean)
+
 ## 📁 Archivos
 
 ```bash
 ├── Front end               # Front - visual usuario
 │   └───src                 # Carpeta fuente del Front
-│   │   └─                  #
-├── Back end                # Back  - Funciones ocultas a 3rceros
+│   │   └───App.tsx         # Archivo contenedor del codigo base del front end typescript
+│   │   └───auth.tsx        # Archivo contenedor del codigo de autenticacion typescript
+│   │   └───main.tsx        # Archivo contenedor del codigo de autenticacion typescript
+│   └──Dockerfile           # archivo docker para upload del Front End
+│   └──readme.md            # archivo readme para informacion acerca del Front end
+├── Back end                # Back   
 │   └──config.py            # Config de variables globales
-│   └──data.env             # Enviromental Keys
-│   └──database.py          # Database functions
-├── requirements.txt        # Dependencias python
+│   └──.env                 # Enviromental Keys -Funciones ocultas a 3rceros
+│   └──models.py            # tables functions and declarations
+│   └──resources.py         # api functions
+│   └──requirements.txt     # Dependencias python
+│   └──Dockerfile           # archivo docker para upload del Back End
+│   └──readme.md            # archivo readme para informacion acerca del Back end
+├── Dockerfile              # archivo docker para upload de todo
 ```
 
 ## 💻 Lenguajes y 🛠️ Herramientas utilizados
@@ -41,12 +64,14 @@ docker run -p 6505:6379 --name 1step -d eqalpha/keydb
 ```
 
 ## ⚙️ Instalacion de dependencias:
+en carpeta backend
 ```bash
-pip install flask
+cd Backend
+pip install -r requirements.txt
 ```
 
 ## ⚡ Ejecución Global
-Ejecuta el programa desde la carpeta front end con:
+Ejecuta el programa desde la carpeta de instalacion con:
 ```bash
 npm run dev
 ```
