@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -70,12 +71,12 @@ class Registro(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     workshop_id = db.Column(db.Integer, db.ForeignKey('Talleres.id'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('Estudiantes.id'), nullable=False)
-    #registered_at = db.Column(db.DateTime, default=dat.utcnow)
+    registered_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
-            "email": self.email,
-            "workshop_id": self.workshop_id
+            "workshop_id": self.workshop_id,
+            "student_id": self.student_id,
+            "registered_at": self.registered_at.isoformat()
         }

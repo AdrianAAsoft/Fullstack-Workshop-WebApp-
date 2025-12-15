@@ -69,10 +69,8 @@ class WorkshopRegistration(Resource):
         workshop = Talleres.query.get_or_404(workshop_id)
         args = student_parser.parse_args()
         
-        # Comprobar si el estudiante ya está registrado en este taller (OPCIONAL NO IMPLEMENTADO)
-        # existing_student = Student.query.filter_by(email=args['email'], workshop_id=workshop_id).first()
-        # if existing_student:
-        #     return {'message': 'Student already registered'}, 400
+        if len(workshop.registrations) >= workshop.capacity:
+            return {'message': 'Workshop is full'}, 400
 
         # Find or create student
         email = args['studentEmail']
@@ -98,6 +96,7 @@ class WorkshopRegistration(Resource):
         
         return {
             'message': 'Registration successful',
-            'student': new_registration.to_dict(),
+            'student': student.to_dict(),
             'workshop': workshop.to_dict()
         }, 201 #201 mensaje de creado un registro de un estudiante en un taller
+
