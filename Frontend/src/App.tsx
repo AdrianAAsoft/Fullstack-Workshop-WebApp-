@@ -1,3 +1,4 @@
+import { getSessionUser, loginUser, registerUser, logoutUser } from './auth';
 import { useMemo, useState } from 'react';
 import { CalendarDays, CheckCircle2, Clock3, MapPin, Plus, Users, XCircle } from 'lucide-react';
 import { Button } from './components/ui/button';
@@ -26,6 +27,11 @@ const emptyForm: Workshop = {
 const categories = ['Tecnología', 'Emprendimiento', 'Habilidades Blandas', 'Creatividad', 'Salud'];
 
 function App() {
+  const [isLogged, setIsLogged] = useState<boolean>(!!getSessionUser());
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
   const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
   const [form, setForm] = useState<Workshop>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -68,6 +74,30 @@ function App() {
 
     resetForm();
   };
+  
+  const handleLoginUser = () => {
+    const err = loginUser(loginForm.email, loginForm.password);
+    if (err) {
+      setAuthError(err);
+      return;
+    }
+    setIsLogged(true);
+  };
+
+  const handleRegisterUser = () => {
+    const err = registerUser(registerForm);
+    if (err) {
+      setAuthError(err);
+      return;
+    }
+    alert('Usuario registrado correctamente');
+    setIsRegistering(false);
+  };
+
+  const handleLogoutUser = () => {
+    logoutUser();
+    setIsLogged(false);
+  };
 
   const handleEdit = (workshop: Workshop) => {
     setForm(workshop);
@@ -106,6 +136,68 @@ function App() {
     setMessage('Inscripción registrada. ¡Revisa tu correo para más detalles!');
     setEnrollment((prev) => ({ ...prev, studentName: '', studentEmail: '' }));
   };
+  
+  if (!isLogged) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>{isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}</CardTitle>
+            {authError && <p className="text-red-500 text-sm">{authError}</p>}
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {isRegistering ? (
+              <>
+                <Input
+                  placeholder="Nombre"
+                  value={registerForm.name}
+                  onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                />
+                <Input
+                  placeholder="Correo"
+                  value={registerForm.email}
+                  onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                />
+                <Input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={registerForm.password}
+                  onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                />
+                <Button onClick={handleRegisterUser} className="w-full">
+                  Registrarse
+                </Button>
+              </>
+            ) : (
+              <>
+                <Input
+                  placeholder="Correo"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                />
+                <Input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                />
+                <Button onClick={handleLoginUser} className="w-full">
+                  Entrar
+                </Button>
+              </>
+            )}
+          </CardContent>
+
+          <CardFooter>
+            <Button variant="ghost" onClick={() => { setIsRegistering(!isRegistering); setAuthError(null); }}>
+              {isRegistering ? 'Ya tengo cuenta' : 'Crear cuenta'}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-slate-800">
