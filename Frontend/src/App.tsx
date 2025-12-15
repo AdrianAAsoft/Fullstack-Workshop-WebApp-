@@ -1,5 +1,5 @@
 import { getSessionUser, loginUser, registerUser, logoutUser } from './auth';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarDays, CheckCircle2, Clock3, MapPin, Plus, Users, XCircle } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card';
@@ -31,21 +31,14 @@ function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({email: '',password: '',role: 'usuario'});
-  const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({name: '',email: '',password: '',isAdmin: false,adminPassword: ''});
+
   const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
   const [form, setForm] = useState<Workshop>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment>({ workshopId: initialWorkshops[0].id, studentEmail: '', studentName: '' });
   const [filter, setFilter] = useState('todos');
   const [message, setMessage] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false); // Nuevo estado para verificar si el usuario es admin
-
-  useEffect(() => {
-    const sessionUser = getSessionUser();
-    if (sessionUser && sessionUser.role === 'admin') {
-      setIsAdmin(true);
-    }
-  }, []); // Verifica el rol del usuario al cargar la aplicación
 
   const stats = useMemo(() => {
     const active = workshops.filter((w) => w.status === 'activo');
@@ -83,8 +76,8 @@ function App() {
     resetForm();
   };
   
-  const handleLoginUser = async () => {
-    const err = await loginUser(loginForm.email, loginForm.password);
+  const handleLoginUser = () => {
+    const err = loginUser(loginForm.email, loginForm.password);
     if (err) {
       setAuthError(err);
       return;
@@ -93,15 +86,31 @@ function App() {
     setIsLogged(true);
   };
 
-  const handleRegisterUser = async () => {
-    const err = await registerUser(registerForm);
-    if (err) {
-      setAuthError(err);
-      return;
+  const handleRegisterUser = () => {
+  let role = 'usuario';
+
+  if (registerForm.isAdmin) {
+    if (registerForm.adminPassword === 'markzuckemberg') {
+      role = 'admin';
+    } else {
+      alert('Contraseña de administrador incorrecta. Se registrará como usuario.');
     }
-    alert('Usuario registrado correctamente');
-    setIsRegistering(false);
-  };
+  }
+
+  const err = registerUser({
+    name: registerForm.name,
+    email: registerForm.email,
+    password: registerForm.password,
+    role: role
+  });
+
+  if (err) {
+    setAuthError(err);
+    return;
+  }
+  alert(`Usuario registrado como ${role}`);
+  setIsRegistering(false);
+};
 
   const handleLogoutUser = () => {
     logoutUser();
@@ -174,6 +183,27 @@ function App() {
                   value={registerForm.password}
                   onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                 />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={registerForm.isAdmin}
+                    onChange={(e) =>
+                      setRegisterForm({ ...registerForm, isAdmin: e.target.checked })
+                    }
+                  />
+                  <Label>¿Registrar como administrador?</Label>
+                </div>
+                {registerForm.isAdmin && (
+                <Input
+                  type="password"
+                  placeholder="Contraseña de administrador"
+                  value={registerForm.adminPassword}
+                  onChange={(e) =>
+                    setRegisterForm({...registerForm,adminPassword: e.target.value})
+                  }
+                />
+              )}
+
                 <Button onClick={handleRegisterUser} className="w-full">
                   Registrarse
                 </Button>
@@ -260,94 +290,6 @@ function App() {
             </div>
           </div>
         </header>
-
-        {/* Valida show si es admin */}
-        {isAdmin && (
-          <Card className="lg:col-span-2 glass-card">
-            <CardHeader>
-              <CardTitle>{editingId ? 'Editar taller' : 'Registrar nuevo taller'}</CardTitle>
-              <CardDescription>Captura la información mínima para publicar el taller en el catálogo web.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="title">Título</Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    placeholder="Ej. Diseño de APIs RESTful con Flask"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoría</Label>
-                  <select
-                    id="category"
-                    className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  >
-                    <option value="">Selecciona</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Lugar</Label>
-                  <Input
-                    id="location"
-                    value={form.location}
-                    onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    placeholder="Aula, laboratorio o salón"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Fecha</Label>
-                  <Input id="date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="time">Hora</Label>
-                  <Input id="time" type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="capacity">Cupos</Label>
-                  <Input
-                    id="capacity"
-                    type="number"
-                    min={1}
-                    value={form.capacity}
-                    onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="description">Descripción</Label>
-                  <Textarea
-                    id="description"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Objetivo, requisitos y actividades principales"
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <Button type="submit" className="gap-2">
-                    <Plus className="h-4 w-4" /> {editingId ? 'Guardar cambios' : 'Publicar taller'}
-                  </Button>
-                  {editingId && (
-                    <Button type="button" variant="ghost" onClick={resetForm}>
-                      Cancelar edición
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </CardContent>
-            {message && (
-              <CardFooter className="text-sm text-emerald-700">{message}</CardFooter>
-            )}
-          </Card>
-        )}
 
         <section className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-2 glass-card">
@@ -507,7 +449,7 @@ function App() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {visibleWorkshops.map((workshop) => {
               const available = workshop.capacity - workshop.enrolled;
-              const statusColor = workshop.status === 'cancelado' ? 'outline' : 'success';
+              const statusColor = workshop.status === 'cancelado' ? 'destructive' : 'default';
               return (
                 <Card key={workshop.id} className="glass-card">
                   <CardHeader>
