@@ -32,14 +32,21 @@ function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({email: '',password: '',role: 'usuario'});
   const [registerForm, setRegisterForm] = useState({name: '',email: '',password: '',isAdmin: false,adminPassword: ''});
-
   const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
   const [form, setForm] = useState<Workshop>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment>({ workshopId: initialWorkshops[0].id, studentEmail: '', studentName: '' });
   const [filter, setFilter] = useState('todos');
   const [message, setMessage] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false); // Nuevo estado para verificar si el usuario es admin
 
+  useEffect(() => {
+    const sessionUser = getSessionUser();
+    if (sessionUser && sessionUser.role === 'admin') {
+      setIsAdmin(true);
+    }
+  }, []); // Verifica el rol del usuario al cargar la aplicación
+  
   const stats = useMemo(() => {
     const active = workshops.filter((w) => w.status === 'activo');
     const canceled = workshops.filter((w) => w.status === 'cancelado');
@@ -76,8 +83,8 @@ function App() {
     resetForm();
   };
   
-  const handleLoginUser = () => {
-    const err = loginUser(loginForm.email, loginForm.password);
+  const handleLoginUser = async () => {
+    const err = await loginUser(loginForm.email, loginForm.password);
     if (err) {
       setAuthError(err);
       return;
@@ -86,31 +93,26 @@ function App() {
     setIsLogged(true);
   };
 
-  const handleRegisterUser = () => {
-  let role = 'usuario';
+  const handleRegisterUser = async () => {
+    let role = 'usuario';
 
-  if (registerForm.isAdmin) {
-    if (registerForm.adminPassword === 'markzuckemberg') {
+    if (registerForm.isAdmin) {
+    
+      if (registerForm.adminPassword === 'markzuckemberg') {
       role = 'admin';
     } else {
-      alert('Contraseña de administrador incorrecta. Se registrará como usuario.');
+      alert('Contraseña de administrador incorrecta. Se registrará como usuario.');}
+    }
+    const err = await registerUser(registerForm);
+    if (err) {
+      setAuthError(err);
+      return;
     }
   }
 
-  const err = registerUser({
-    name: registerForm.name,
-    email: registerForm.email,
-    password: registerForm.password,
-    role: role
-  });
-
-  if (err) {
-    setAuthError(err);
-    return;
-  }
-  alert(`Usuario registrado como ${role}`);
+  alert(`Usuario registrado`);
   setIsRegistering(false);
-};
+  };
 
   const handleLogoutUser = () => {
     logoutUser();
@@ -203,7 +205,6 @@ function App() {
                   }
                 />
               )}
-
                 <Button onClick={handleRegisterUser} className="w-full">
                   Registrarse
                 </Button>
@@ -449,7 +450,7 @@ function App() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {visibleWorkshops.map((workshop) => {
               const available = workshop.capacity - workshop.enrolled;
-              const statusColor = workshop.status === 'cancelado' ? 'destructive' : 'default';
+              const statusColor = workshop.status === 'cancelado' ? 'outline' : 'success';
               return (
                 <Card key={workshop.id} className="glass-card">
                   <CardHeader>
