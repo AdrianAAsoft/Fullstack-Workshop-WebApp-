@@ -2,11 +2,11 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_restful import Api
 from models import db
-from resources import WorkshopListResource, WorkshopResource, WorkshopRegistration
+from resources import WorkshopListResource, WorkshopResource, WorkshopRegistration, UserRegis, LoginUser
 
 app = Flask(__name__)
 app.config.from_object('config.config')
-CORS(app)
+CORS(app) #Habilito CORS para llamadas de front y back en sintonia
 api = Api(app)
 
 db.init_app(app)
@@ -22,6 +22,8 @@ def home():
 api.add_resource(WorkshopListResource, '/workshops')
 api.add_resource(WorkshopResource, '/workshops/<int:workshop_id>')
 api.add_resource(WorkshopRegistration, '/workshops/<int:workshop_id>/register')
+api.add_resource(UserRegis, '/users')
+api.add_resource(LoginUser, '/login')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

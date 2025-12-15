@@ -1,6 +1,6 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from models import db, Talleres, Estudiantes, Registro
+from models import db, Talleres, Estudiantes, Registro, Usuarios
 
 # Parsers
 workshop_parser = reqparse.RequestParser()
@@ -56,9 +56,6 @@ class WorkshopResource(Resource):
     def delete(self, workshop_id):
         workshop = Talleres.query.get_or_404(workshop_id)
         
-        # Instead of hard delete, we could set status to 'cancelado'
-        # But user might want to delete. Let's keep delete but maybe just mark as canceled if it has registrations?
-        # For now, strict delete.
         db.session.delete(workshop)
         db.session.commit()
         return {'message': 'Workshop deleted'}, 200 #200 mensaje de ok se elimino
@@ -100,3 +97,33 @@ class WorkshopRegistration(Resource):
             'workshop': workshop.to_dict()
         }, 201 #201 mensaje de creado un registro de un estudiante en un taller
 
+
+#Clase para el registro de un usuario en el sistema
+class UserRegis(Resource):
+    def get(self, usuario_id):
+        registrations = Registro.query.filter_by(student_id=usuario_id).all()
+        return [r.to_dict() for r in registrations] 
+    
+    def post(self, usuario_id):
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        name = data.get('name')
+
+        #Creacion de usuario en base de datos
+        new_user = Usuarios(name=name, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+        return {'message': 'Usuario registrado con éxito'}, 201 #estado creado
+
+class LoginUser(Resource):
+    def post(self):
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        user = Estudiantes.query.filter_by(email=email, password=password).first()
+        if not user:
+            return {'message': 'Correo o contraseña incorrectos'}, 401
+        
+        return {'message': 'Inicio de sesión exitoso', 'user': user.to_dict()}, 200
