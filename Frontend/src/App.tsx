@@ -30,7 +30,7 @@ function App() {
   const [isLogged, setIsLogged] = useState<boolean>(!!getSessionUser());
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginForm, setLoginForm] = useState({email: '',password: '',role: 'usuario'});
   const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '' });
   const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
   const [form, setForm] = useState<Workshop>(emptyForm);
@@ -76,11 +76,12 @@ function App() {
   };
   
   const handleLoginUser = () => {
-    const err = loginUser(loginForm.email, loginForm.password);
+    const err = loginUser(loginForm.email, loginForm.password, loginForm.role);
     if (err) {
       setAuthError(err);
       return;
     }
+    localStorage.setItem('role', loginForm.role);
     setIsLogged(true);
   };
 
@@ -182,6 +183,17 @@ function App() {
                   value={loginForm.password}
                   onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                 />
+                <div className="space-y-2">
+                 <Label>Tipo de acceso</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    value={loginForm.role}
+                    onChange={(e) => setLoginForm({ ...loginForm, role: e.target.value })}
+                  >
+                    <option value="usuario">Usuario</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
                 <Button onClick={handleLoginUser} className="w-full">
                   Entrar
                 </Button>
