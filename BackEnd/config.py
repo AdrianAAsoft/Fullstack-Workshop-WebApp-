@@ -3,9 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-URLBase = os.getenv("URL")
-URLDB = os.getenv("bdurl")
+URLBase = os.getenv("URL") #URL para verificar backend
+URLDB = os.getenv("bdurl") #URL base de datos
 
-class appcnf:
-    SQLALCHEMY_DATABASE_URI= URLBase
-    SLQALCHEMY_TRACK_MODIFICATIONS = False
+class config:
+    SQLALCHEMY_DATABASE_URI = URLDB
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
