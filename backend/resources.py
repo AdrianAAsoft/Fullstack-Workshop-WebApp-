@@ -4,15 +4,17 @@ from models import db, Talleres, Estudiantes, Registro, Usuarios
 
 # Parsers
 workshop_parser = reqparse.RequestParser()
-workshop_parser.add_argument('name', type=str, required=True, help='Name is required')
+workshop_parser.add_argument('title', type=str, required=True, help='Title is required')
 workshop_parser.add_argument('description', type=str, required=True, help='Description is required')
 workshop_parser.add_argument('date', type=str, required=True, help='Date is required')
 workshop_parser.add_argument('time', type=str, required=True, help='Time is required')
 workshop_parser.add_argument('location', type=str, required=True, help='Location is required')
 workshop_parser.add_argument('category', type=str, required=True, help='Category is required')
+workshop_parser.add_argument('capacity', type=int, required=False)
 
 student_parser = reqparse.RequestParser()
-student_parser.add_argument('usuario_id', type=int, required=True, help='usuario_id is required')
+student_parser.add_argument('studentEmail', type=str, required=True, help='studentEmail is required')
+student_parser.add_argument('studentName', type=str, required=True, help='studentName is required')
 
 #Clase para listas de talleres
 class WorkshopListResource(Resource):
@@ -28,7 +30,8 @@ class WorkshopListResource(Resource):
             date=args['date'],
             time=args['time'],
             location=args['location'],
-            category=args['category']
+            category=args['category'],
+            capacity=args.get('capacity') or 20
         )
         db.session.add(new_workshop)
         db.session.commit()
@@ -43,12 +46,14 @@ class WorkshopResource(Resource):
         workshop = Talleres.query.get_or_404(workshop_id) #Un get que retorna un taller en especifico si existe mediante llave o id en este caso id
         args = workshop_parser.parse_args()
         
-        workshop.name = args['name']
+        workshop.title = args['title']
         workshop.description = args['description']
         workshop.date = args['date']
         workshop.time = args['time']
         workshop.location = args['location']
         workshop.category = args['category']
+        if args.get('capacity') is not None:
+            workshop.capacity = args['capacity']
         
         db.session.commit()
         return workshop.to_dict()
@@ -100,18 +105,29 @@ class WorkshopRegistration(Resource):
 
 #Clase para el registro de un usuario en el sistema
 class UserRegis(Resource):
-    def get(self, usuario_id):
-        registrations = Registro.query.filter_by(student_id=usuario_id).all()
-        return [r.to_dict() for r in registrations] 
-    
-    def post(self, usuario_id):
+    def get(self):
+        # Opcional: devolver lista de usuarios (sin passwords)
+        users = Usuarios.query.all()
+        return [u.to_dict() for u in users]
+
+    def post(self):
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
         name = data.get('name')
+        role = data.get('role', 'usuario')
 
-        #Creacion de usuario en base de datos
-        new_user = Usuarios(name=name, email=email, password=password)
+        # Validaciones básicas
+        if not email or not password or not name:
+            return {'message': 'Faltan campos obligatorios'}, 400
+
+        # Verificar usuario existente
+        existing = Usuarios.query.filter_by(email=email).first()
+        if existing:
+            return {'message': 'El correo ya está registrado'}, 400
+
+        # Creacion de usuario en base de datos
+        new_user = Usuarios(name=name, email=email, password=password, role=role)
         db.session.add(new_user)
         db.session.commit()
         return {'message': 'Usuario registrado con éxito'}, 201 #estado creado
@@ -121,8 +137,8 @@ class LoginUser(Resource):
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
-
-        user = Estudiantes.query.filter_by(email=email, password=password).first()
+        # Buscar en tabla de usuarios
+        user = Usuarios.query.filter_by(email=email, password=password).first()
         if not user:
             return {'message': 'Correo o contraseña incorrectos'}, 401
         

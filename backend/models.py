@@ -6,7 +6,7 @@ db = SQLAlchemy()
 class Usuarios(db.Model):
     __tablename__ = "Usuarios"
     id = db.Column(db.Integer, primary_key=True)
-    correo = db.Column(db.String(100),primary_key=True, nullable=False)
+    correo = db.Column(db.String(100),unique=True, nullable=False)
     nombre = db.Column(db.String(25), nullable=False)
     contra = db.Column(db.String(15), nullable=False)
     admin = db.Column(db.Boolean, default=False, nullable=False) #Falso para estudiantes 

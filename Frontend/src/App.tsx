@@ -1,8 +1,24 @@
 import { getSessionUser, loginUser, registerUser, logoutUser } from './auth';
-import { useMemo, useState } from 'react';
-import { CalendarDays, CheckCircle2, Clock3, MapPin, Plus, Users, XCircle } from 'lucide-react';
+import axios from 'axios';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  MapPin,
+  Plus,
+  Users,
+  XCircle
+} from 'lucide-react';
 import { Button } from './components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from './components/ui/card';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Badge } from './components/ui/badge';
@@ -24,34 +40,62 @@ const emptyForm: Workshop = {
   status: 'activo'
 };
 
-const categories = ['Tecnología', 'Emprendimiento', 'Habilidades Blandas', 'Creatividad', 'Salud'];
+const categories = [
+  'Tecnología',
+  'Emprendimiento',
+  'Habilidades Blandas',
+  'Creatividad',
+  'Salud'
+];
 
 function App() {
   const [isLogged, setIsLogged] = useState<boolean>(!!getSessionUser());
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [loginForm, setLoginForm] = useState({email: '',password: '',role: 'usuario'});
-  const [registerForm, setRegisterForm] = useState({name: '',email: '',password: '',isAdmin: false,adminPassword: ''});
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: ''
+  });
+  const [registerForm, setRegisterForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    isAdmin: false,
+    adminPassword: ''
+  });
+
   const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
   const [form, setForm] = useState<Workshop>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [enrollment, setEnrollment] = useState<Enrollment>({ workshopId: initialWorkshops[0].id, studentEmail: '', studentName: '' });
+  const [enrollment, setEnrollment] = useState<Enrollment>({
+    workshopId: initialWorkshops[0].id,
+    studentEmail: '',
+    studentName: ''
+  });
   const [filter, setFilter] = useState('todos');
   const [message, setMessage] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false); // Nuevo estado para verificar si el usuario es admin
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     const sessionUser = getSessionUser();
-    if (sessionUser && sessionUser.role === 'admin') {
+    if (sessionUser?.role === 'admin') {
       setIsAdmin(true);
     }
-  }, []); // Verifica el rol del usuario al cargar la aplicación
-  
+  }, []);
+
   const stats = useMemo(() => {
     const active = workshops.filter((w) => w.status === 'activo');
     const canceled = workshops.filter((w) => w.status === 'cancelado');
-    const seats = active.reduce((acc, w) => acc + (w.capacity - w.enrolled), 0);
-    return { total: workshops.length, active: active.length, canceled: canceled.length, seats };
+    const seats = active.reduce(
+      (acc, w) => acc + (w.capacity - w.enrolled),
+      0
+    );
+    return {
+      total: workshops.length,
+      active: active.length,
+      canceled: canceled.length,
+      seats
+    };
   }, [workshops]);
 
   const visibleWorkshops = useMemo(() => {
@@ -64,59 +108,59 @@ function App() {
     setEditingId(null);
   };
 
-  const handleSubmit = (evt: React.FormEvent) => {
-    evt.preventDefault();
-    if (!form.title || !form.date || !form.time) {
-      setMessage('Completa título, fecha y hora.');
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    if (editingId) {
-      setWorkshops((prev) => prev.map((item) => (item.id === editingId ? { ...form, id: editingId } : item)));
-      setMessage('Taller actualizado con éxito.');
-    } else {
-      const newWorkshop = { ...form, id: crypto.randomUUID() };
-      setWorkshops((prev) => [...prev, newWorkshop]);
-      setMessage('Taller creado y publicado.');
-    }
+    try {
+      if (editingId) {
+        // Enviar actualización al backend
+        const res = await axios.put(`api/workshops/${editingId}`, form);
+        setMessage('Taller actualizado.');
+      } else {
+        // Crear taller en backend
+        const res = await axios.post('api/workshops', form);
+        setMessage('Taller creado.');
+      }
 
-    resetForm();
+      // Refrescar lista desde backend
+      const list = await axios.get('api/workshops');
+      setWorkshops(list.data);
+      resetForm();
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || 'Error al guardar el taller');
+    }
   };
-  
+
   const handleLoginUser = async () => {
     const err = await loginUser(loginForm.email, loginForm.password);
     if (err) {
       setAuthError(err);
       return;
     }
-    localStorage.setItem('role', loginForm.role);
-    setIsLogged(true);
+
+    // Leer la sesión real que guardó loginUser
+    const sessionUser = getSessionUser();
+    setIsLogged(!!sessionUser);
+    setIsAdmin(sessionUser?.role === 'admin');
   };
 
   const handleRegisterUser = async () => {
-    let role = 'usuario';
-
-    if (registerForm.isAdmin) {
-    
-      if (registerForm.adminPassword === 'markzuckemberg') {
-      role = 'admin';
-    } else {
-      alert('Contraseña de administrador incorrecta. Se registrará como usuario.');}
-    }
-    const err = await registerUser(registerForm);
+    // Delegar la verificación y creación al backend
+    const role = registerForm.isAdmin ? 'admin' : 'usuario';
+    const err = await registerUser({ ...registerForm, role });
     if (err) {
       setAuthError(err);
       return;
     }
-  }
 
-  alert(`Usuario registrado`);
-  setIsRegistering(false);
+    alert('Usuario registrado');
+    setIsRegistering(false);
   };
 
   const handleLogoutUser = () => {
     logoutUser();
     setIsLogged(false);
+    setIsAdmin(false);
   };
 
   const handleEdit = (workshop: Workshop) => {
@@ -125,45 +169,59 @@ function App() {
   };
 
   const handleCancel = (id: string) => {
-    setWorkshops((prev) => prev.map((w) => (w.id === id ? { ...w, status: 'cancelado' } : w)));
-    setMessage('Taller cancelado.');
+    setWorkshops((prev) =>
+      prev.map((w) =>
+        w.id === id ? { ...w, status: 'cancelado' } : w
+      )
+    );
   };
 
   const handleDelete = (id: string) => {
     setWorkshops((prev) => prev.filter((w) => w.id !== id));
-    setMessage('Taller eliminado.');
     if (editingId === id) resetForm();
   };
 
-  const handleRegister = (evt: React.FormEvent) => {
-    evt.preventDefault();
-    const targetWorkshop = workshops.find((w) => w.id === enrollment.workshopId);
-    if (!targetWorkshop) return;
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    if (targetWorkshop.status === 'cancelado') {
-      setMessage('No puedes inscribirte en un taller cancelado.');
-      return;
+    try {
+      const res = await axios.post(
+        `api/workshops/${enrollment.workshopId}/register`,
+        {
+          studentEmail: enrollment.studentEmail,
+          studentName: enrollment.studentName
+        }
+      );
+
+      setMessage('Registro exitoso');
+
+      // Refrescar lista de talleres desde backend
+      const list = await axios.get('api/workshops');
+      setWorkshops(list.data);
+
+      setEnrollment({
+        ...enrollment,
+        studentEmail: '',
+        studentName: ''
+      });
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || 'Error al registrar el estudiante');
     }
-
-    if (targetWorkshop.enrolled >= targetWorkshop.capacity) {
-      setMessage('El taller ya alcanzó su capacidad máxima.');
-      return;
-    }
-
-    setWorkshops((prev) =>
-      prev.map((w) => (w.id === enrollment.workshopId ? { ...w, enrolled: w.enrolled + 1 } : w))
-    );
-    setMessage('Inscripción registrada. ¡Revisa tu correo para más detalles!');
-    setEnrollment((prev) => ({ ...prev, studentName: '', studentEmail: '' }));
   };
-  
+
+  /* ================= LOGIN ================= */
+
   if (!isLogged) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>{isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}</CardTitle>
-            {authError && <p className="text-red-500 text-sm">{authError}</p>}
+            <CardTitle>
+              {isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}
+            </CardTitle>
+            {authError && (
+              <p className="text-red-500 text-sm">{authError}</p>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -172,40 +230,67 @@ function App() {
                 <Input
                   placeholder="Nombre"
                   value={registerForm.name}
-                  onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      name: e.target.value
+                    })
+                  }
                 />
                 <Input
                   placeholder="Correo"
                   value={registerForm.email}
-                  onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      email: e.target.value
+                    })
+                  }
                 />
                 <Input
                   type="password"
                   placeholder="Contraseña"
                   value={registerForm.password}
-                  onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      password: e.target.value
+                    })
+                  }
                 />
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={registerForm.isAdmin}
                     onChange={(e) =>
-                      setRegisterForm({ ...registerForm, isAdmin: e.target.checked })
+                      setRegisterForm({
+                        ...registerForm,
+                        isAdmin: e.target.checked
+                      })
                     }
                   />
-                  <Label>¿Registrar como administrador?</Label>
+                  <Label>¿Administrador?</Label>
                 </div>
+
                 {registerForm.isAdmin && (
-                <Input
-                  type="password"
-                  placeholder="Contraseña de administrador"
-                  value={registerForm.adminPassword}
-                  onChange={(e) =>
-                    setRegisterForm({...registerForm,adminPassword: e.target.value})
-                  }
-                />
-              )}
-                <Button onClick={handleRegisterUser} className="w-full">
+                  <Input
+                    type="password"
+                    placeholder="Password admin"
+                    value={registerForm.adminPassword}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        adminPassword: e.target.value
+                      })
+                    }
+                  />
+                )}
+
+                <Button
+                  onClick={handleRegisterUser}
+                  className="w-full"
+                >
                   Registrarse
                 </Button>
               </>
@@ -214,26 +299,29 @@ function App() {
                 <Input
                   placeholder="Correo"
                   value={loginForm.email}
-                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setLoginForm({
+                      ...loginForm,
+                      email: e.target.value
+                    })
+                  }
                 />
                 <Input
                   type="password"
                   placeholder="Contraseña"
                   value={loginForm.password}
-                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  onChange={(e) =>
+                    setLoginForm({
+                      ...loginForm,
+                      password: e.target.value
+                    })
+                  }
                 />
-                <div className="space-y-2">
-                 <Label>Tipo de acceso</Label>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    value={loginForm.role}
-                    onChange={(e) => setLoginForm({ ...loginForm, role: e.target.value })}
-                  >
-                    <option value="usuario">Usuario</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-                <Button onClick={handleLoginUser} className="w-full">
+                {/* Role selection removed: backend determines role */}
+                <Button
+                  onClick={handleLoginUser}
+                  className="w-full"
+                >
                   Entrar
                 </Button>
               </>
@@ -241,8 +329,16 @@ function App() {
           </CardContent>
 
           <CardFooter>
-            <Button variant="ghost" onClick={() => { setIsRegistering(!isRegistering); setAuthError(null); }}>
-              {isRegistering ? 'Ya tengo cuenta' : 'Crear cuenta'}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setAuthError(null);
+              }}
+            >
+              {isRegistering
+                ? 'Ya tengo cuenta'
+                : 'Crear cuenta'}
             </Button>
           </CardFooter>
         </Card>
@@ -250,254 +346,7 @@ function App() {
     );
   }
 
-  return (
-    <div className="min-h-screen text-slate-800">
-      <div className="mx-auto max-w-6xl px-4 py-10 space-y-10">
-        <header className="glass-card rounded-2xl p-8 shadow-xl">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-3">
-              <p className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                Gestión de talleres profesionales
-              </p>
-              <h1 className="text-3xl font-bold leading-tight text-slate-900 md:text-4xl">
-                Diseña, publica y administra la oferta académica de tu centro.
-              </h1>
-              <p className="max-w-3xl text-base text-slate-600">
-                Usa la consola de administración para crear talleres, monitorear cupos y registrar estudiantes en un solo lugar.
-                Los cambios se reflejan de inmediato en el catálogo público.
-              </p>
-              <div className="flex gap-3 text-sm text-slate-500">
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> API RESTful lista para conectar</div>
-                <div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-amber-500" /> Inscripciones en tiempo real</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-900 px-6 py-5 text-white shadow-lg">
-              <div>
-                <p className="text-sm text-slate-300">Talleres activos</p>
-                <p className="text-3xl font-bold">{stats.active}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-300">Cupos disponibles</p>
-                <p className="text-3xl font-bold">{stats.seats}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-300">Cancelados</p>
-                <p className="text-3xl font-bold">{stats.canceled}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-300">Total talleres</p>
-                <p className="text-3xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <section className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2 glass-card">
-            <CardHeader>
-              <CardTitle>{editingId ? 'Editar taller' : 'Registrar nuevo taller'}</CardTitle>
-              <CardDescription>Captura la información mínima para publicar el taller en el catálogo web.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="title">Título</Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    placeholder="Ej. Diseño de APIs RESTful con Flask"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoría</Label>
-                  <select
-                    id="category"
-                    className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  >
-                    <option value="">Selecciona</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Lugar</Label>
-                  <Input
-                    id="location"
-                    value={form.location}
-                    onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    placeholder="Aula, laboratorio o salón"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Fecha</Label>
-                  <Input id="date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="time">Hora</Label>
-                  <Input id="time" type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="capacity">Cupos</Label>
-                  <Input
-                    id="capacity"
-                    type="number"
-                    min={1}
-                    value={form.capacity}
-                    onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="description">Descripción</Label>
-                  <Textarea
-                    id="description"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Objetivo, requisitos y actividades principales"
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <Button type="submit" className="gap-2">
-                    <Plus className="h-4 w-4" /> {editingId ? 'Guardar cambios' : 'Publicar taller'}
-                  </Button>
-                  {editingId && (
-                    <Button type="button" variant="ghost" onClick={resetForm}>
-                      Cancelar edición
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </CardContent>
-            {message && (
-              <CardFooter className="text-sm text-emerald-700">{message}</CardFooter>
-            )}
-          </Card>
-
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Inscribir estudiante</CardTitle>
-              <CardDescription>Registra a un estudiante en cualquier taller disponible.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="workshopId">Taller</Label>
-                  <select
-                    id="workshopId"
-                    className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    value={enrollment.workshopId}
-                    onChange={(e) => setEnrollment({ ...enrollment, workshopId: e.target.value })}
-                  >
-                    {workshops.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="studentName">Nombre completo</Label>
-                  <Input
-                    id="studentName"
-                    value={enrollment.studentName}
-                    onChange={(e) => setEnrollment({ ...enrollment, studentName: e.target.value })}
-                    placeholder="Nombre del estudiante"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="studentEmail">Correo</Label>
-                  <Input
-                    id="studentEmail"
-                    type="email"
-                    value={enrollment.studentEmail}
-                    onChange={(e) => setEnrollment({ ...enrollment, studentEmail: e.target.value })}
-                    placeholder="estudiante@correo.com"
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Registrar cupo
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3 justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">Catálogo de talleres</h2>
-              <p className="text-sm text-slate-500">Filtra por categoría y administra inscripciones.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {['todos', ...categories].map((option) => (
-                <Button
-                  key={option}
-                  variant={filter === option ? 'default' : 'ghost'}
-                  onClick={() => setFilter(option)}
-                  className="capitalize"
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {visibleWorkshops.map((workshop) => {
-              const available = workshop.capacity - workshop.enrolled;
-              const statusColor = workshop.status === 'cancelado' ? 'outline' : 'success';
-              return (
-                <Card key={workshop.id} className="glass-card">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{workshop.title}</CardTitle>
-                        <CardDescription>{workshop.description}</CardDescription>
-                      </div>
-                      <Badge variant={statusColor}>{workshop.status === 'cancelado' ? 'Cancelado' : 'Activo'}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4 text-slate-500" /> {workshop.date} · {workshop.time}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-slate-500" /> {workshop.location || 'Por confirmar'}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-slate-500" /> {workshop.enrolled} / {workshop.capacity} inscritos
-                    </div>
-                    <Badge variant="outline" className="mt-1 w-fit border-primary/40 text-primary">
-                      {workshop.category || 'Sin categoría'}
-                    </Badge>
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <Button variant="secondary" onClick={() => handleEdit(workshop)}>
-                        Editar
-                      </Button>
-                      <Button variant="outline" onClick={() => handleCancel(workshop.id)} disabled={workshop.status === 'cancelado'}>
-                        Cancelar
-                      </Button>
-                      <Button variant="ghost" className="text-destructive" onClick={() => handleDelete(workshop.id)}>
-                        <XCircle className="mr-2 h-4 w-4" /> Eliminar
-                      </Button>
-                      <div className={cn('text-xs font-medium', available > 0 ? 'text-emerald-600' : 'text-amber-700')}>
-                        {available > 0 ? `${available} cupos libres` : 'Cupo lleno'}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+  return <div className="p-10">APP CARGADA ✔</div>;
 }
 
 export default App;
