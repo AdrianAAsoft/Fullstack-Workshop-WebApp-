@@ -1,6 +1,4 @@
 flask
 flask-cors
 flask-restful
-flask-sqlalchemy
-mysqlclient
-python-dotenv
+Flask-SQLAlchemy

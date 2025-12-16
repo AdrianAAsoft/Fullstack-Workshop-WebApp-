@@ -2,11 +2,12 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_restful import Api
 from models import db
-from resources import WorkshopListResource, WorkshopResource, WorkshopRegistration, UserRegis, LoginUser
+from resources import WorkshopListResource, WorkshopResource, WorkshopRegistration, LoginResource
 
 app = Flask(__name__)
-app.config.from_object('config.config')
-CORS(app) #Habilito CORS para llamadas de front y back en sintonia
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///workshops.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+CORS(app)
 api = Api(app)
 
 db.init_app(app)
@@ -22,8 +23,7 @@ def home():
 api.add_resource(WorkshopListResource, '/workshops')
 api.add_resource(WorkshopResource, '/workshops/<int:workshop_id>')
 api.add_resource(WorkshopRegistration, '/workshops/<int:workshop_id>/register')
-api.add_resource(UserRegis, '/users')
-api.add_resource(LoginUser, '/login')
+api.add_resource(LoginResource, '/login')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

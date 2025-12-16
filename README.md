@@ -1,99 +1,113 @@
-# Fullstack-Workshop-WebApp-
-Aplicación web para gestionar talleres de formación profesional
+# Sistema de Gestión de Talleres de Formación Profesional
 
-# 📝 Contexto
-Permitir a estudiantes y administradores gestionar talleres como cursos técnicos, capacitaciones prácticas y programas de actualización profesional. Además, se implemento una API RESTful para interactuar con los datos de los talleres.
+Este proyecto consiste en una aplicación web para la gestión de talleres de formación profesional (cursos técnicos, capacitaciones, etc.), permitiendo a administradores gestionar la oferta académica y a estudiantes inscribirse en las actividades.
 
-## 💻🗄️📊 Diseño de Base de datos
-Base de datos diseñada para el manejo simple de usuarios y estudiantes.  <img width="204" height="101" alt="image" src="https://github.com/user-attachments/assets/53414b41-e702-4454-8c45-40b62a71d024" /> 
+El sistema implementa una arquitectura Cliente-Servidor con una **API RESTful** en el backend y una interfaz web para los usuarios.
 
-Database: Principal
+## 📋 Características
 
-Tables: 
-- estudiantes
-   -- Columns: id (int, primary key), usrid (int, foreign key)
-- registros
-   -- Columns: id (int, primary key), workshop_id (int, foreign key), student_id(int,foreign key),registered_at (datetime)
-- talleres
-  -- Columns: id (int, primary key), usrid (int, foreign key)
-- usuarios
-  -- Columns: id (int, primary key), nombre (String(25)), , correo (String(100)), contra (String(15)), admin (Boolean)
+### Funcionalidades Generales
+*   **Gestión de Talleres (Administradores):**
+    *   Crear nuevos talleres (nombre, descripción, fecha, hora, lugar, categoría).
+    *   Modificar detalles de talleres existentes.
+    *   Cancelar/Eliminar talleres.
+*   **Participación (Estudiantes):**
+    *   Visualizar lista de talleres disponibles.
+    *   Ver detalles específicos de cada taller.
+    *   Inscribirse/Registrarse en talleres.
 
-## 📁 Archivos
+### API RESTful
+La aplicación expone los siguientes endpoints para la integración:
 
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `GET` | `/workshops` | Obtener todos los talleres disponibles. |
+| `GET` | `/workshops/{id}` | Obtener detalles de un taller específico. |
+| `POST` | `/workshops` | Crear un nuevo taller (Admin). |
+| `PUT` | `/workshops/{id}` | Modificar un taller existente (Admin). |
+| `DELETE` | `/workshops/{id}` | Eliminar un taller (Admin). |
+| `POST` | `/workshops/{id}/register` | Registrar a un estudiante en un taller. |
+
+## 🛠️ Tecnologías Utilizadas
+
+*   **Backend:** Python con Flask (Flask-RESTful).
+*   **Frontend:** HTML5, CSS3, JavaScript (Opcional: Bootstrap/React).
+*   **Base de Datos:** (A definir: PostgreSQL / MongoDB / MySQL).
+*   **Control de Versiones:** Git & GitHub.
+
+## 🚀 Instalación y Ejecución
+
+Sigue estos pasos para configurar el entorno de desarrollo local.
+
+### Prerrequisitos
+*   Python 3.8 o superior
+*   Gestor de paquetes `pip`
+*   Motor de Base de Datos seleccionado instalado y corriendo.
+
+### 1. Clonar el repositorio
 ```bash
-├── Front end               # Front - visual usuario
-│   └───src                 # Carpeta fuente del Front
-│   │   └───App.tsx         # Archivo contenedor del codigo base del front end typescript
-│   │   └───auth.tsx        # Archivo contenedor del codigo de autenticacion typescript
-│   │   └───main.tsx        # Archivo contenedor del codigo de autenticacion typescript
-│   └──Dockerfile           # archivo docker para upload del Front End
-│   └──readme.md            # archivo readme para informacion acerca del Front end
-├── Back end                # Back   
-│   └──config.py            # Config de variables globales
-│   └──.env                 # Enviromental Keys -Funciones ocultas a 3rceros
-│   └──models.py            # tables functions and declarations
-│   └──resources.py         # api functions
-│   └──requirements.txt     # Dependencias python
-│   └──Dockerfile           # archivo docker para upload del Back End
-│   └──readme.md            # archivo readme para informacion acerca del Back end
-├── Dockerfile              # archivo docker para upload de todo
+git clone <url-del-repositorio>
+cd <nombre-de-la-carpeta>
 ```
 
-## 💻 Lenguajes y 🛠️ Herramientas utilizados
-React | TypeScript | Python | MySQL | Vite
+### 2. Configuración del Backend
 
-<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/react/react-original.svg" alt="react" width="40" height="40"/> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" alt="typescript" width="40" height="40"/> | 
-<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" alt="python" width="40" height="40"/> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original-wordmark.svg" alt="mysql" width="40" height="40"/> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/vite/vite-original.svg" alt="vite" width="40" height="40"/>
+Se recomienda crear un entorno virtual:
 
-
-## 📌 Deploy (Windows):
-
-
-## 📌 Deploy (Docker):
-1. Instalar docker hub [https://www.docker.com/get-started/]
-2. Abrir docker hub
-3. windows + R
-4. cmd + enter
-5. En el cmd escribir lo siguiente:
-   - 1step es una variable que especifica el nombre del contenedor
-   - 6505 es el puerto que le colocas al contenedor (es modficable)
-   - 6379 es el puerto en el que escucha keydb (no modificable)
 ```bash
-docker run -p 6505:6379 --name 1step -d eqalpha/keydb 
+# Crear entorno virtual
+python -m venv venv
+
+# Activar entorno (Windows)
+venv\Scripts\activate
+# Activar entorno (macOS/Linux)
+source venv/bin/activate
 ```
 
-## ⚙️ Instalacion de dependencias:
-en carpeta backend
+Instalar dependencias:
 ```bash
-cd Backend
 pip install -r requirements.txt
 ```
 
-## ⚡ Ejecución Global
-Ejecuta el programa desde la carpeta de instalacion con:
-```bash
-npm run dev
+Configurar variables de entorno (crear archivo `.env`):
+```env
+FLASK_APP=app.py
+FLASK_ENV=development
+DATABASE_URL=tu_cadena_de_conexion
 ```
 
-## ▶️ Ejecución Front End (React-TypeScript js)
-- Esto abrira el Front en el local host con el puerto '5173'
-- Ejecuta el programa desde la carpeta front end con el siguiente comando:
+Iniciar el servidor:
 ```bash
-npm install
-npm run dev
+flask run
 ```
 
-## 🐍 Ejecución Back End (Python)
-- Esto abrira el Back end en el local host con el puerto ''
-- Ejecuta el programa desde la carpeta back end con el siguiente comando Windows CLI:
-```bash
-python app.py
+### 3. Ejecución del Frontend
+Abra el archivo `index.html` en su navegador o sirva la aplicación frontend utilizando un servidor local (por ejemplo, Live Server en VSCode).
+
+## 📂 Estructura del Proyecto (Sugerida)
+
 ```
-- Ejecuta el programa desde la carpeta back end con el siguiente comando MAC/Linux CLI:
-```bash
-python3 app.py
+/
+├── backend/
+│   ├── app.py              # Punto de entrada de la aplicación Flask
+│   ├── models/             # Modelos de base de datos
+│   ├── routes/             # Definición de rutas y endpoints
+│   ├── controllers/        # Lógica de negocio
+│   └── requirements.txt    # Dependencias de Python
+├── frontend/
+│   ├── css/
+│   ├── js/
+│   └── index.html
+├── docs/                   # Documentación técnica adicional
+└── README.md
 ```
 
-## 🧪 Ejemplo de Uso
-<img width="1031" height="603" alt="image" src="https://github.com/user-attachments/assets/4c5bdd5b-9df2-40d5-9705-347231720a25" />
+## 👥 Contribución y Trabajo en Grupo
+
+1.  **Backend:** Responsables de la API, conexión a BD y lógica del servidor.
+2.  **Frontend:** Responsables de la interfaz de usuario y consumo de la API.
+3.  **Base de Datos:** Diseño del esquema y mantenimiento de datos.
+4.  **Documentación:** Mantenimiento de guías y documentación técnica.
+
+## 📄 Licencia
+Este proyecto es parte del curso de Programación IV (UIP - 2025 III Cuatrimestre).

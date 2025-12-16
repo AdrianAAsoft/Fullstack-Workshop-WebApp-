@@ -1,7 +1,7 @@
 export type WorkshopStatus = 'activo' | 'cancelado';
 
 export interface Workshop {
-  id: string;
+  id: number;
   title: string;
   description: string;
   location: string;
@@ -16,13 +16,5 @@ export interface Workshop {
 export interface Enrollment {
   studentName: string;
   studentEmail: string;
-  workshopId: string;
+  workshopId: number;
 }
-
-export interface User {
-  name: string;
-  email: string;
-  password: string;
-  role: 'admin' | 'usuario';
-}
-

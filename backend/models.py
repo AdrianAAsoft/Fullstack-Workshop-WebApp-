@@ -3,40 +3,20 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-class Usuarios(db.Model):
-    __tablename__ = "Usuarios"
+class Workshop(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    correo = db.Column(db.String(100),primary_key=True, nullable=False)
-    nombre = db.Column(db.String(25), nullable=False)
-    contra = db.Column(db.String(15), nullable=False)
-    admin = db.Column(db.Boolean, default=False, nullable=False) #Falso para estudiantes 
-    
-
-    estudiante = db.relationship('Estudiantes',backref='Usuarios',uselist=False,cascade="all, delete-orphan")
-    # Método to_dict para convertir a diccionario
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "correo": self.correo,
-            "contra": self.contra,
-            "admin": self.admin,
-        }
-    
-class Talleres(db.Model):
-    __tablename__ = "Talleres"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(10), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50), nullable=False)
+    capacity = db.Column(db.Integer, default=20, nullable=False)
+    status = db.Column(db.String(20), default='activo', nullable=False)
     
-    # relacion a registros
-    registrations = db.relationship('Registros', backref='Talleres', lazy=True, cascade="all, delete-orphan")
+    # Relationship to registrations
+    registrations = db.relationship('Registration', backref='workshop', lazy=True, cascade="all, delete-orphan")
 
-    # Método to_dict para convertir a diccionario
     def to_dict(self):
         return {
             "id": self.id,
@@ -51,27 +31,25 @@ class Talleres(db.Model):
             "enrolled": len(self.registrations)
         }
 
-class Estudiantes(db.Model):
-    __tablename__ = "Estudiantes"
+class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    usrid = db.Column(db.Integer,db.ForeignKey('Usuarios.id'),nullable=False,unique=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    
+    # Relationship to registrations
+    registrations = db.relationship('Registration', backref='student', lazy=True)
 
-    # relacion de llave foranea(foreign key): Los estudiantes se registran a un taller
-    registrations = db.relationship('Registros', backref='Estudiantes', lazy=True)
-
-    # Método to_dict para convertir a diccionario
     def to_dict(self):
         return {
             "id": self.id,
-            "nombre": self.usuarios.nombre,
-            "correo": self.usuarios.correo
+            "name": self.name,
+            "email": self.email
         }
 
-class Registro(db.Model):
-    __tablename__ = "Registros"
+class Registration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    workshop_id = db.Column(db.Integer, db.ForeignKey('Talleres.id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('Estudiantes.id'), nullable=False)
+    workshop_id = db.Column(db.Integer, db.ForeignKey('workshop.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -80,4 +58,17 @@ class Registro(db.Model):
             "workshop_id": self.workshop_id,
             "student_id": self.student_id,
             "registered_at": self.registered_at.isoformat()
+        }
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False) # Plaintext for this project as requested
+    role = db.Column(db.String(20), nullable=False) # 'admin' or 'student'
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "role": self.role
         }
