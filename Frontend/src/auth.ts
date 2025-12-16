@@ -1,4 +1,8 @@
 import axios from 'axios';
+
+// Development API base — point axios to the backend port (5001 by default).
+// If you use a different port, set VITE_API_URL or update this value.
+axios.defaults.baseURL = 'http://localhost:5001/';
 import { User } from './types';
 
 export const registerUser = async (user: User): Promise<string | null> => {
@@ -27,5 +31,7 @@ export const getSessionUser = () => {
 };
 
 export const logoutUser = () => {
+  // remove any authentication-related keys
   localStorage.removeItem('session');
+  localStorage.removeItem('role');
 };

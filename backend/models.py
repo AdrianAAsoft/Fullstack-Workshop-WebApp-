@@ -12,15 +12,16 @@ class Usuarios(db.Model):
     admin = db.Column(db.Boolean, default=False, nullable=False) #Falso para estudiantes 
     
 
-    estudiante = db.relationship('Estudiantes',backref='Usuarios',uselist=False,cascade="all, delete-orphan")
+    estudiante = db.relationship('Estudiantes', backref='usuario', uselist=False, cascade="all, delete-orphan")
     # Método to_dict para convertir a diccionario
     def to_dict(self):
         return {
             "id": self.id,
-            "nombre": self.nombre,
-            "correo": self.correo,
-            "contra": self.contra,
-            "admin": self.admin,
+            "name": self.nombre,
+            "email": self.correo,
+            # warning: password returned here for compatibility with frontend; consider removing
+            "password": self.contra,
+            "role": 'admin' if self.admin else 'usuario'
         }
     
 class Talleres(db.Model):
@@ -32,22 +33,24 @@ class Talleres(db.Model):
     time = db.Column(db.String(10), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50), nullable=False)
+    capacity = db.Column(db.Integer, default=20, nullable=False)
+    status = db.Column(db.String(20), default='activo', nullable=False)
     
-    # relacion a registros
-    registrations = db.relationship('Registros', backref='Talleres', lazy=True, cascade="all, delete-orphan")
+    # relacion a registros (use the Registro mapper/class name here)
+    registrations = db.relationship('Registro', backref='taller', lazy=True, cascade="all, delete-orphan")
 
     # Método to_dict para convertir a diccionario
     def to_dict(self):
         return {
             "id": self.id,
-            "title": self.title,
+            "title": self.name,
             "description": self.description,
             "date": self.date,
             "time": self.time,
             "location": self.location,
             "category": self.category,
-            "capacity": self.capacity,
-            "status": self.status,
+            "capacity": getattr(self, 'capacity', 20),
+            "status": getattr(self, 'status', 'activo'),
             "enrolled": len(self.registrations)
         }
 
@@ -57,14 +60,16 @@ class Estudiantes(db.Model):
     usrid = db.Column(db.Integer,db.ForeignKey('Usuarios.id'),nullable=False,unique=True)
 
     # relacion de llave foranea(foreign key): Los estudiantes se registran a un taller
-    registrations = db.relationship('Registros', backref='Estudiantes', lazy=True)
+    registrations = db.relationship('Registro', backref='estudiante', lazy=True)
 
     # Método to_dict para convertir a diccionario
     def to_dict(self):
+        # Return linked usuario info if available via backref
+        user = getattr(self, 'usuario', None)
         return {
             "id": self.id,
-            "nombre": self.usuarios.nombre,
-            "correo": self.usuarios.correo
+            "name": user.nombre if user else None,
+            "email": user.correo if user else None
         }
 
 class Registro(db.Model):

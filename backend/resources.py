@@ -3,14 +3,25 @@ from flask_restful import Resource, reqparse
 from models import db, Talleres, Estudiantes, Registro, Usuarios
 
 # Parsers
-workshop_parser = reqparse.RequestParser()
-workshop_parser.add_argument('title', type=str, required=True, help='Title is required')
-workshop_parser.add_argument('description', type=str, required=True, help='Description is required')
-workshop_parser.add_argument('date', type=str, required=True, help='Date is required')
-workshop_parser.add_argument('time', type=str, required=True, help='Time is required')
-workshop_parser.add_argument('location', type=str, required=True, help='Location is required')
-workshop_parser.add_argument('category', type=str, required=True, help='Category is required')
-workshop_parser.add_argument('capacity', type=int, required=False)
+# Separate parsers for create (required fields) and update (optional)
+workshop_create_parser = reqparse.RequestParser()
+workshop_create_parser.add_argument('title', type=str, required=True, help='Title is required')
+workshop_create_parser.add_argument('description', type=str, required=True, help='Description is required')
+workshop_create_parser.add_argument('date', type=str, required=True, help='Date is required')
+workshop_create_parser.add_argument('time', type=str, required=True, help='Time is required')
+workshop_create_parser.add_argument('location', type=str, required=True, help='Location is required')
+workshop_create_parser.add_argument('category', type=str, required=True, help='Category is required')
+workshop_create_parser.add_argument('capacity', type=int, required=False)
+
+workshop_update_parser = reqparse.RequestParser()
+workshop_update_parser.add_argument('title', type=str, required=False)
+workshop_update_parser.add_argument('description', type=str, required=False)
+workshop_update_parser.add_argument('date', type=str, required=False)
+workshop_update_parser.add_argument('time', type=str, required=False)
+workshop_update_parser.add_argument('location', type=str, required=False)
+workshop_update_parser.add_argument('category', type=str, required=False)
+workshop_update_parser.add_argument('capacity', type=int, required=False)
+workshop_update_parser.add_argument('status', type=str, required=False)
 
 student_parser = reqparse.RequestParser()
 student_parser.add_argument('studentEmail', type=str, required=True, help='studentEmail is required')
@@ -23,9 +34,9 @@ class WorkshopListResource(Resource):
         return [w.to_dict() for w in workshops]
 
     def post(self): #post crea talleres
-        args = workshop_parser.parse_args()
+        args = workshop_create_parser.parse_args()
         new_workshop = Talleres(
-            title=args['title'],
+            name=args['title'],
             description=args['description'],
             date=args['date'],
             time=args['time'],
@@ -43,18 +54,27 @@ class WorkshopResource(Resource):
         return workshop.to_dict()
 
     def put(self, workshop_id):#put actualiza taller
-        workshop = Talleres.query.get_or_404(workshop_id) #Un get que retorna un taller en especifico si existe mediante llave o id en este caso id
-        args = workshop_parser.parse_args()
-        
-        workshop.title = args['title']
-        workshop.description = args['description']
-        workshop.date = args['date']
-        workshop.time = args['time']
-        workshop.location = args['location']
-        workshop.category = args['category']
+        workshop = Talleres.query.get_or_404(workshop_id)
+        args = workshop_update_parser.parse_args()
+
+        # Update only provided fields
+        if args.get('title') is not None:
+            workshop.name = args['title']
+        if args.get('description') is not None:
+            workshop.description = args['description']
+        if args.get('date') is not None:
+            workshop.date = args['date']
+        if args.get('time') is not None:
+            workshop.time = args['time']
+        if args.get('location') is not None:
+            workshop.location = args['location']
+        if args.get('category') is not None:
+            workshop.category = args['category']
         if args.get('capacity') is not None:
             workshop.capacity = args['capacity']
-        
+        if args.get('status') is not None:
+            workshop.status = args['status']
+
         db.session.commit()
         return workshop.to_dict()
 
@@ -74,13 +94,21 @@ class WorkshopRegistration(Resource):
         if len(workshop.registrations) >= workshop.capacity:
             return {'message': 'Workshop is full'}, 400
 
-        # Find or create student
+        # Find or create usuario (Users table) and estudiante (Estudiantes table)
         email = args['studentEmail']
         name = args['studentName']
-        
-        student = Estudiantes.query.filter_by(email=email).first()
+
+        usuario = Usuarios.query.filter_by(correo=email).first()
+        if not usuario:
+            # create a lightweight Usuario record (no password)
+            usuario = Usuarios(nombre=name, correo=email, contra='', admin=False)
+            db.session.add(usuario)
+            db.session.commit()
+
+        # Find or create estudiante linked to usuario
+        student = Estudiantes.query.filter_by(usrid=usuario.id).first()
         if not student:
-            student = Estudiantes(name=name, email=email)
+            student = Estudiantes(usrid=usuario.id)
             db.session.add(student)
             db.session.commit() # Commit to get ID
         
@@ -122,12 +150,12 @@ class UserRegis(Resource):
             return {'message': 'Faltan campos obligatorios'}, 400
 
         # Verificar usuario existente
-        existing = Usuarios.query.filter_by(email=email).first()
+        existing = Usuarios.query.filter_by(correo=email).first()
         if existing:
             return {'message': 'El correo ya está registrado'}, 400
 
-        # Creacion de usuario en base de datos
-        new_user = Usuarios(name=name, email=email, password=password, role=role)
+        # Creacion de usuario en base de datos (usar los campos del modelo Usuarios)
+        new_user = Usuarios(nombre=name, correo=email, contra=password, admin=(role == 'admin'))
         db.session.add(new_user)
         db.session.commit()
         return {'message': 'Usuario registrado con éxito'}, 201 #estado creado
@@ -137,8 +165,8 @@ class LoginUser(Resource):
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
-        # Buscar en tabla de usuarios
-        user = Usuarios.query.filter_by(email=email, password=password).first()
+        # Buscar en tabla de usuarios (usar campos del modelo Usuarios)
+        user = Usuarios.query.filter_by(correo=email, contra=password).first()
         if not user:
             return {'message': 'Correo o contraseña incorrectos'}, 401
         
